@@ -4,8 +4,8 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.contracts = void 0;
-const fabcar_1 = require("./fabcar");
-var fabcar_2 = require("./fabcar");
-Object.defineProperty(exports, "FabCar", { enumerable: true, get: function () { return fabcar_2.FabCar; } });
-exports.contracts = [fabcar_1.FabCar];
+const batches_1 = require("./batches");
+var batches_2 = require("./batches");
+Object.defineProperty(exports, "Batches", { enumerable: true, get: function () { return batches_2.Batches; } });
+exports.contracts = [batches_1.Batches];
 //# sourceMappingURL=index.js.map

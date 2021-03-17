@@ -1,2 +1,2 @@
-export { FabCar } from './fabcar';
+export { Batches } from './batches';
 export declare const contracts: any[];

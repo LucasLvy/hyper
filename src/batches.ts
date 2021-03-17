@@ -11,8 +11,8 @@ import { PreviousProducersResult } from './previousProducers';
 import { TimestampMapper } from './timestamp';
 // import { Utils } from './utils';
 
-@Info({ title: 'FabCar', description: 'FabCar Smart Contract' })
-export class FabCar extends Contract
+@Info({ title: 'Batches', description: 'Batches Smart Contract' })
+export class Batches extends Contract
 {
 
   @Transaction()

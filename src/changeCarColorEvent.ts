@@ -6,9 +6,8 @@ import { Object, Property } from 'fabric-contract-api';
 // use an interface to share the definition with client code
 export interface IChangeColorEvent {
   docType: string;
-  carNumber: string;
-  previousColor: string;
-  newColor: string;
+  id: string;
+  certification: string;
   transactionDate: Date;
 }
 
@@ -18,22 +17,18 @@ export class ChangeColorEvent implements IChangeColorEvent {
   public docType: string;
 
   @Property()
-  public carNumber: string;
+  public id: string;
 
   @Property()
-  public previousColor: string;
-
-  @Property()
-  public newColor: string;
+  public certification: string;
 
   // @Property()
   public transactionDate: Date;
 
-  public constructor(carNumber: string, previousColor: string, newColor: string, txDate: Date) {
+  public constructor(id: string, certification: string, txDate: Date) {
     this.docType = 'changeColorEvent';
-    this.carNumber = carNumber;
-    this.previousColor = previousColor;
-    this.newColor = newColor;
+    this.id = id;
+    this.certification = certification;
     this.transactionDate = txDate;
   }
 

@@ -6,7 +6,7 @@ import { Object, Property } from 'fabric-contract-api';
 export class Car {
 
   @Property()
-    public batchId: string = '';
+    public id: string = '';
 
     @Property()
     public weight?: number;
@@ -17,10 +17,10 @@ export class Car {
     //@Property()
     //public date: Date;
     // let's create the date with the transaction automatically (CreateBatchEvents)
-
-    @Property()
-    public certification?: string[];
-
+    
     @Property()
     public docType?: string;
-}
+    
+    @Property()
+    public certification?: string[];
+  }

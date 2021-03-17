@@ -473,74 +473,41 @@ export class FabCar extends Contract
 
     console.info('============= END : changeCarOwner ===========');
   }
-/*
+
   @Transaction()
-  public async resprayCar(ctx: Context, id: string, newColor: string)
-  {
-    console.info('============= START : resprayCar ===========');
-
-    const exists = await this.carExists(ctx, carNumber);
-    if (!exists) {
-      throw new Error(`The car ${carNumber} does not exist.`);
-    }
+public async resprayCar(ctx: Context, id: string, certification: string)
+{
+  console.info('============= START : resprayCar ===========');
 
 
-    // get the car we want to modify and the current certOwner from it
-    const buffer = await ctx.stub.getState(carNumber); // get the car from chaincode state
-    const car = JSON.parse(buffer.toString()) as Car;
-    const carCertId = car.certOwner;
+  // get the car we want to modify and the current certOwner from it
+  const buffer = await ctx.stub.getState(id); // get the car from chaincode state
+  const car = JSON.parse(buffer.toString()) as Car;
+  // const carCertId = car.certOwner;
 
-    if (!newColor) {
-      throw new Error(`The car ${carNumber} cannot be resprayed as the 'newColor' parameter is empty and we are out of invisible paint :-)`);
-    }
-
-    if (car.color.toLowerCase() === newColor.toLowerCase()) {
-      throw new Error(`The color of car ${carNumber} cannot be changed as the current color '${car.color}' and the new color are the same.`);
-    }
-
-    // get the client ID so we can make sure they are allowed to modify the car
-    const cid = new ClientIdentity(ctx.stub);
-    const clientCertId = cid.getID();
-
-    // the rule is to be able to modify a car you must be the current certOwner for it
-    // which usually means you are the creater of it or have had it transfered to your FabricUserID (CN)
-    if (carCertId !== clientCertId) {
-
-      // we are not the certOwner for it, but see if it has been transfered to us via a
-      // changeCarOwner() transaction - which means we check our CN against the current external owner
-      const clientCN = Utils.extractCN(clientCertId);
-      if (clientCN !== car.owner) {
-        // special case IBM Org which can take ownership of anything
-        const msp = cid.getMSPID();
-        if (msp !== 'IBMMSP') {
-          const carCN = Utils.extractCN(carCertId);
-          throw new Error(`The color of car ${carNumber} cannot be changed. User ${clientCN} not authorised to change a car owned by ${carCN}.`);
-        }
-      } else {
-        // as the car has been transfered to us, we need to take "full" ownership of it
-        // this prevents the previous owner deleting it for example. IBM Org does not need to do this!
-
-        // but first make sure we do not already have too many cars
-        await Utils.checkForMaxCars(carNumber, clientCertId, cid, ctx, true); // this will throw if not ok
-        car.certOwner = clientCertId;
-      }
-    }
-
-    // set the new color into the car
-    const previousColor = car.color;
-    car.color = newColor;
-
-    // put the car into the RWSET for adding to the ledger
-    await ctx.stub.putState(carNumber, Buffer.from(JSON.stringify(car)));
-
-    // emit an event to inform listeners that a car has had its color changed
-    const txDate = TimestampMapper.toDate(ctx.stub.getTxTimestamp());
-    const changecolorEvent = new ChangeColorEvent(carNumber, previousColor, newColor, txDate);
-    ctx.stub.setEvent(changecolorEvent.docType, Buffer.from(JSON.stringify(changecolorEvent)));
-
-    console.info('============= END : resprayCar ===========');
+  if (!certification) {
+    throw new Error(`The car ${id} cannot be resprayed as the 'certification' parameter is empty and we are out of invisible paint :-)`);
   }
+  if (car.certification){
+    
+    if (car.certification.includes(certification.toLowerCase())) {
+      throw new Error(`The color of car ${id} cannot be changed as the current color '${car.certification}' and the new color are the same.`);
+    }
+    car.certification.push(certification)
+  }
+  else {
+    car.certification= [certification]
+  }
+  await ctx.stub.putState(id, Buffer.from(JSON.stringify(car)));
 
+  // emit an event to inform listeners that a car has had its color changed
+  const txDate = TimestampMapper.toDate(ctx.stub.getTxTimestamp());
+  const changecolorEvent = new ChangeColorEvent(id, certification, txDate);
+  ctx.stub.setEvent(changecolorEvent.docType, Buffer.from(JSON.stringify(changecolorEvent)));
+
+  console.info('============= END : resprayCar ===========');
+}
+/*
   @Transaction()
   @Returns('PreviousOwnersResult')
   public async getPreviousOwners(ctx: Context, carNumber: string): Promise<PreviousOwnersResult>

@@ -3,115 +3,21 @@
  */
 import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
 import { ClientIdentity, Iterators } from 'fabric-shim';
-import { Car } from './car';
-import { ChangeOwnerEvent } from './changeCarOwnerEvent';
-import { ChangeColorEvent } from './changeCarColorEvent';
-import { CreateCarEvent } from './createCarEvent';
-import { DeleteCarEvent } from './deleteCarEvent';
-import { PreviousOwnersResult } from './previousOwners';
+import { Batch } from './batch';
+import { ChangeProducerEvent } from './changeBatchProducerEvent';
+import { AddCertificationEvent } from './addCertificationEvent';
+import { CreateBatchEvent } from './createBatchEvent';
+import { PreviousProducersResult } from './previousProducers';
 import { TimestampMapper } from './timestamp';
 // import { Utils } from './utils';
 
 @Info({ title: 'FabCar', description: 'FabCar Smart Contract' })
 export class FabCar extends Contract
 {
-/*
-  // @Transaction(false)
-  public async initLedger(ctx: Context)
-  {
-    console.info('============= START : Initialize Ledger ===========');
 
-    // get our ID to stamp into the car
-    const cid = new ClientIdentity(ctx.stub);
-    const clientCertId = cid.getID();
-
-    const cars: Car[] = [
-      {
-        color: 'blue',
-        make: 'Toyota',
-        producerId: 'Prius',
-        owner: 'Tomoko',
-      },
-      {
-        color: 'red',
-        make: 'Ford',
-        model: 'Mustang',
-        owner: 'Brad',
-      },
-      {
-        color: 'green',
-        make: 'Hyundai',
-        model: 'Tucson',
-        owner: 'Jin Soo',
-      },
-      {
-        color: 'yellow',
-        make: 'Volkswagen',
-        model: 'Passat',
-        owner: 'Max',
-      },
-      {
-        color: 'black',
-        make: 'Tesla',
-        model: 'S',
-        owner: 'Adriana',
-      },
-      {
-        color: 'purple',
-        make: 'Peugeot',
-        model: '205',
-        owner: 'Michel',
-      },
-      {
-        color: 'white',
-        make: 'Chery',
-        model: 'S22L',
-        owner: 'Aarav',
-      },
-      {
-        color: 'violet',
-        make: 'Fiat',
-        model: 'Punto',
-        owner: 'Pari',
-      },
-      {
-        color: 'indigo',
-        make: 'Tata',
-        model: 'Nano',
-        owner: 'Valeria',
-      },
-      {
-        color: 'brown',
-        make: 'Holden',
-        model: 'Barina',
-        owner: 'Shotaro',
-      },
-    ];
-
-    for (let i = 0; i < cars.length; i++) {
-      cars[i].docType = 'car';
-      cars[i].certOwner = clientCertId;
-      await ctx.stub.putState('CAR' + i, Buffer.from(JSON.stringify(cars[i])));
-      console.info('Added <--> ', cars[i]);
-    }
-    console.info('============= END : Initialize Ledger ===========');
-  }
-
-  @Transaction(false)
-  @Returns('boolean')
-  public async carExists(ctx: Context, carNumber: string): Promise<boolean>
-  {
-
-    // make sure the carNumber is valid before trying to get it
-    Utils.verifyCarKey(carNumber);
-
-    const buffer = await ctx.stub.getState(carNumber);
-    return (!!buffer && buffer.length > 0);
-  }
-*/
   @Transaction()
-  @Returns('Car')
-  public async queryCar(ctx: Context, id: string): Promise<Car>
+  @Returns('Batch')
+  public async queryBatch(ctx: Context, id: string): Promise<Batch>
   {
 
 
@@ -127,202 +33,13 @@ export class FabCar extends Contract
     }
 
     const buffer = await ctx.stub.getState(id); // get the car from chaincode state
-    const car = JSON.parse(buffer.toString()) as Car;
+    const batch = JSON.parse(buffer.toString()) as Batch;
   
-    return car;
+    return batch;
   }
-  /*
+  
   @Transaction()
-  @Returns('object[]')
-  public async queryByOwner(ctx: Context, carOwner: string): Promise<object[]>
-  {
-
-    // Check for transient options to control query and output. We allow:
-    // [ "QueryOutput": "all" | "normal" (the default) ] Returns certOwner field in the output
-    let outputAll = false;
-    const transientData = ctx.stub.getTransient();
-    if (transientData.has('QueryOutput')) {
-      const value = transientData.get('QueryOutput');
-      if (value?.toString('utf8') === 'all') {
-        outputAll = true;
-      }
-    }
-
-    if (!carOwner) {
-      throw new Error(`The query cannot be made as the 'carOwner' parameter is empty.`);
-    }
-
-    // construct the query we need
-    const query = {
-      selector: {
-        docType: 'car',
-        owner: carOwner,
-      },
-      use_index: [
-        '_design/indexOwnerDoc',
-        'indexOwner',
-      ],
-    };
-
-    // console.log('****QUERY: ', query);
-
-    // issue the query
-    const iterator = await ctx.stub.getQueryResult(JSON.stringify(query));
-
-    // Now process the query results
-    return await Utils.processQueryResults(outputAll, iterator);
-  }
-
-  @Transaction()
-  @Returns('object[]')
-  public async queryAllCars(ctx: Context): Promise<object[]>
-  {
-
-    // Check for transient options to control query and output. We allow:
-    // 1: [ "QueryOutput": "all" | "normal" (the default) ] Returns certOwner field in the output
-    // 2: [ "QueryByOwner": "John" ] Return only those cars owned by "John" or "Max" or whoever
-    // 3: [ "QueryByCreator": "true" | "fabric_user_xxxx" ] Returns only cars the caller (or another user) have created and have not transfered
-    // 4: [ "QueryOutput": "all", "QueryByOwner": "John", "QueryByCreator": "true" ] Combinations of the above
-    let outputAll = false;
-    let iterator: Iterators.StateQueryIterator; // undefined
-    const transientData = ctx.stub.getTransient();
-    const optionsCount = transientData.size;
-    if (optionsCount > 0) {
-      // store the index and design doc to use
-      let queryIndexName = '';
-      let queryIndexDesignDocName = '';
-
-      // Get output options
-      if (transientData.has('QueryOutput')) {
-        const value = transientData.get('QueryOutput');
-        if (value?.toString('utf8') === 'all') {
-          outputAll = true;
-        }
-
-        // set up the correct index to use in the search
-        queryIndexName = 'indexDocType';
-        queryIndexDesignDocName = '_design/indexDocTypeDoc';
-      }
-
-      const selector: any = {};
-      // Process queryByOwner options
-      if (transientData.has('QueryByOwner')) {
-        let queryByOwner = '';
-        const value = transientData.get('QueryByOwner');
-        if (value) {
-          queryByOwner = value.toString('utf8');
-        }
-
-        // set up the correct index to use in the search
-        queryIndexName = 'indexOwner';
-        queryIndexDesignDocName = '_design/indexOwnerDoc';
-
-        // set up the correct selector to use in the search
-        selector.owner = queryByOwner;
-      }
-
-      // Process query by Creator options
-      // Note: if owner and certOwner are chosen it will work but will
-      // slow down the search as we do not index for owner AND certOwner together
-      if (transientData.has('QueryByCreator')) {
-        const value = transientData.get('QueryByCreator');
-        const creatorId = value?.toString('utf8');
-
-        // get our ID to queryBy or use as a template
-        const cid = new ClientIdentity(ctx.stub);
-        const clientCertId = cid.getID();
-
-        // true means use current callers ID
-        let queryByCreatorId = '';
-        if (creatorId === 'true') {
-          queryByCreatorId = clientCertId;
-        } else if (creatorId?.startsWith('x509::/')) {
-          // explicit string used, use this verbatim
-          queryByCreatorId = creatorId;
-        } else {
-          // Replace current caller CN with the provided one. This only works
-          // for cars that are created under the using the same CA as the caller.
-          queryByCreatorId = Utils.replaceCN(clientCertId, creatorId);
-        }
-
-        // set up the correct index to use in the search
-        queryIndexName = 'indexCertOwner';
-        queryIndexDesignDocName = '_design/indexCertOwnerDoc';
-
-        // set up the correct selector to use in the search
-        selector.certOwner = queryByCreatorId;
-      }
-
-      // construct the query
-      selector.docType = 'car';
-      const query = {
-        selector,
-        use_index: [
-          queryIndexDesignDocName,
-          queryIndexName,
-        ],
-      };
-      // console.log('****QUERY: ', query);
-
-      // finally issue the query
-      iterator = await ctx.stub.getQueryResult(JSON.stringify(query));
-
-    } else {
-      // process a simple range query instead
-      const startKey = 'CAR0';
-      const endKey = 'CAR9999';
-
-      // issue the query
-      iterator = await ctx.stub.getStateByRange(startKey, endKey);
-    }
-
-    // Now process the query results
-    return await Utils.processQueryResults(outputAll, iterator);
-  }
-
-  @Transaction()
-  @Returns('object[]')
-  public async findMyCars(ctx: Context): Promise<object[]>
-  {
-
-    // Check for transient options to control query and output. We allow:
-    // [ "QueryOutput": "all" | "normal" (the default) ] Returns certOwner field in the output
-    let outputAll = false;
-    const transientData = ctx.stub.getTransient();
-    if (transientData.has('QueryOutput')) {
-      const value = transientData.get('QueryOutput');
-      if (value?.toString('utf8') === 'all') {
-        outputAll = true;
-      }
-    }
-
-    // get our ID to stamp into the car
-    const cid = new ClientIdentity(ctx.stub);
-    const clientCertId = cid.getID();
-
-    // construct the query we need
-    const query = {
-      selector: {
-        certOwner: clientCertId,
-        docType: 'car',
-      },
-      use_index: [
-        '_design/indexCertOwnerDoc',
-        'indexCertOwner',
-      ],
-    };
-
-    // console.log('****QUERY: ', query);
-
-    // issue the query
-    const iterator = await ctx.stub.getQueryResult(JSON.stringify(query));
-
-    // Now process the query results
-    return await Utils.processQueryResults(outputAll, iterator);
-  }
-*/
-  @Transaction()
-  public async createCar(ctx: Context,weight: number, id:string, producerId:string)
+  public async createBatch(ctx: Context,weight: number, id:string, producerId:string)
   {
     console.info('============= START : Create Car ===========');
 
@@ -348,88 +65,39 @@ export class FabCar extends Contract
     }
     const txDate = TimestampMapper.toDate(ctx.stub.getTxTimestamp());
 
-    const car: Car = {
+    const batch: Batch = {
       id,
       weight,
       producerId,
       docType: 'coton',
     };
 
-    const buffer = Buffer.from(JSON.stringify(car));
+    const buffer = Buffer.from(JSON.stringify(batch));
     await ctx.stub.putState(id, buffer);
 
     // emit an event to inform listeners that a car has been created
-    const createCarEvent = new CreateCarEvent(id,weight,txDate, producerId);
+    const createCarEvent = new CreateBatchEvent(id,weight,txDate, producerId);
     ctx.stub.setEvent(createCarEvent.docType, Buffer.from(JSON.stringify(createCarEvent)));
 
     console.info('============= END : Create Car ===========');
   }
-/*
-  @Transaction()
-  public async deleteCar(ctx: Context, id: string)
-  {
-    console.info('============= START : Delete Car ===========');
 
-    const exists = await this.carExists(ctx, carNumber);
-    if (!exists) {
-      throw new Error(`The car ${carNumber} does not exist.`);
-    }
-
-    // get the car we want to modify and the current certOwner from it
-    const buffer = await ctx.stub.getState(carNumber); // get the car from chaincode state
-    const car = JSON.parse(buffer.toString()) as Car;
-    const carCertId = car.certOwner;
-    const currentOwner = car.owner;
-
-    // get the client ID so we can weight sure they are allowed to modify the car
-    const cid = new ClientIdentity(ctx.stub);
-    const clientCertId = cid.getID();
-
-    // The rule is to be able to delete a car you must be the current certOwner for it
-    // which usually means you are the creater of it or have had it transfered to your FabricUserID (CN)
-    // Note we allow underfined for now as we may be deployed on an older ledger which did not put clientCertId into cars...
-    if (carCertId !== undefined) {
-      if (carCertId !== clientCertId) {
-
-        // we are not the certOwner for it, but see if it has been transfered to us via a
-        // changeCarOwner() transaction - which means we check our CN against the external current owner
-        const clientCN = Utils.extractCN(clientCertId);
-        if (clientCN !== car.owner) {
-          // special case IBM Org which can delete anything
-          const msp = cid.getMSPID();
-          if (msp !== 'IBMMSP') {
-            const carCN = Utils.extractCN(carCertId);
-            throw new Error(`The car ${carNumber} cannot be deleted. User ${clientCN} not authorised to delete car owned by ${carCN}.`);
-          }
-        }
-      }
-    }
-
-    await ctx.stub.deleteState(carNumber);
-
-    // emit an event to inform listeners that a car has been deleted
-    const txDate = TimestampMapper.toDate(ctx.stub.getTxTimestamp());
-    const deleteCarEvent = new DeleteCarEvent(carNumber, currentOwner, txDate);
-    ctx.stub.setEvent(deleteCarEvent.docType, Buffer.from(JSON.stringify(deleteCarEvent)));
-
-    console.info('============= END : Delete Car ===========');
-  }*/
 
   @Transaction()
-  public async changeCarOwner(ctx: Context, id: string, newProducerId: string)
+  public async changeBatchProducer(ctx: Context, id: string, newProducerId: string)
   {
     console.info('============= START : changeCarOwner ===========');
 
     // get the car we want to modify and the current certOwner from it
     const buffer = await ctx.stub.getState(id); // get the car from chaincode state
-    const car = JSON.parse(buffer.toString()) as Car;
+    const batch = JSON.parse(buffer.toString()) as Batch;
 
     if (!newProducerId) {
       throw new Error(`The ownership of car ${id} cannot be changed as the 'newProducer' parameter is empty.`);
     }
 
-    if (car.producerId.toLowerCase() === newProducerId.toLowerCase()) {
-      throw new Error(`The producerIdship of car ${id} cannot be changed as the current producerid '${car.producerId}' and the new producerid are the same.`);
+    if (batch.producerId.toLowerCase() === newProducerId.toLowerCase()) {
+      throw new Error(`The producerIdship of batch ${id} cannot be changed as the current producerid '${batch.producerId}' and the new producerid are the same.`);
     }
 
     // get the client ID so we can make sure they are allowed to modify the car
@@ -461,48 +129,48 @@ export class FabCar extends Contract
 
     // set the new owner into the car
     
-    car.producerId = newProducerId;
+    batch.producerId = newProducerId;
 
-    // put the car into the RWSET for adding to the ledger
-    await ctx.stub.putState(id, Buffer.from(JSON.stringify(car)));
+    // put the batch into the RWSET for adding to the ledger
+    await ctx.stub.putState(id, Buffer.from(JSON.stringify(batch)));
 
     // emit an event to inform listeners that a car has had its owner changed
     const txDate = TimestampMapper.toDate(ctx.stub.getTxTimestamp());
-    const changeOwnerEvent = new ChangeOwnerEvent(id, newProducerId, txDate);
+    const changeOwnerEvent = new ChangeProducerEvent(id, newProducerId, txDate);
     ctx.stub.setEvent(changeOwnerEvent.docType, Buffer.from(JSON.stringify(changeOwnerEvent)));
 
     console.info('============= END : changeCarOwner ===========');
   }
 
   @Transaction()
-public async resprayCar(ctx: Context, id: string, certification: string)
+public async certificateBatch(ctx: Context, id: string, certification: string)
 {
   console.info('============= START : resprayCar ===========');
 
 
   // get the car we want to modify and the current certOwner from it
   const buffer = await ctx.stub.getState(id); // get the car from chaincode state
-  const car = JSON.parse(buffer.toString()) as Car;
+  const batch = JSON.parse(buffer.toString()) as Batch;
   // const carCertId = car.certOwner;
 
   if (!certification) {
     throw new Error(`The car ${id} cannot be resprayed as the 'certification' parameter is empty and we are out of invisible paint :-)`);
   }
-  if (car.certification){
+  if (batch.certification){
     
-    if (car.certification.includes(certification.toLowerCase())) {
-      throw new Error(`The color of car ${id} cannot be changed as the current color '${car.certification}' and the new color are the same.`);
+    if (batch.certification.includes(certification.toLowerCase())) {
+      throw new Error(`The color of batch ${id} cannot be changed as the current color '${batch.certification}' and the new color are the same.`);
     }
-    car.certification.push(certification)
+    batch.certification.push(certification)
   }
   else {
-    car.certification= [certification]
+    batch.certification= [certification]
   }
-  await ctx.stub.putState(id, Buffer.from(JSON.stringify(car)));
+  await ctx.stub.putState(id, Buffer.from(JSON.stringify(batch)));
 
   // emit an event to inform listeners that a car has had its color changed
   const txDate = TimestampMapper.toDate(ctx.stub.getTxTimestamp());
-  const changecolorEvent = new ChangeColorEvent(id, certification, txDate);
+  const changecolorEvent = new AddCertificationEvent(id, certification, txDate);
   ctx.stub.setEvent(changecolorEvent.docType, Buffer.from(JSON.stringify(changecolorEvent)));
 
   console.info('============= END : resprayCar ===========');
@@ -510,7 +178,7 @@ public async resprayCar(ctx: Context, id: string, certification: string)
 
   @Transaction()
   @Returns('PreviousOwnersResult')
-  public async getPreviousOwners(ctx: Context, id: string): Promise<PreviousOwnersResult>
+  public async getPreviousProducers(ctx: Context, id: string): Promise<PreviousProducersResult>
   {
     console.info('============= START : getPreviousOwners ===========');
 
@@ -535,12 +203,12 @@ public async resprayCar(ctx: Context, id: string, certification: string)
         } else {
           // console.log(res.value.value.toString('utf8'));
           try {
-            const car = JSON.parse(res.value.value.toString('utf8')) as Car;
-            currentBatchProducer = car.producerId;
+            const batch = JSON.parse(res.value.value.toString('utf8')) as Batch;
+            currentBatchProducer = batch.producerId;
           } catch (err) {
             // result = 'Invalid JSON';
             console.log(err);
-            throw new Error(`The car ${id} has an invalid JSON record ${res.value.value.toString('utf8')}.`);
+            throw new Error(`The batch ${id} has an invalid JSON record ${res.value.value.toString('utf8')}.`);
           }
         }
 
@@ -573,7 +241,7 @@ public async resprayCar(ctx: Context, id: string, certification: string)
     }
 
     // create the return data
-    const allresults = new PreviousOwnersResult(
+    const allresults = new PreviousProducersResult(
       previousProducerCount,
       previousProducers,
       previousOwnershipChangeDates,
@@ -584,54 +252,5 @@ public async resprayCar(ctx: Context, id: string, certification: string)
     console.info('============= END : getPreviousOwners ===========');
     return allresults;
   }
-/*
-  @Transaction()
-  public async confirmTransfer(ctx: Context, id: string): Promise<boolean>
-  {
-    console.info('============= START : confirmTransfer ===========');
 
-    const exists = await this.carExists(ctx, carNumber);
-    if (!exists) {
-      throw new Error(`The car ${carNumber} does not exist.`);
-    }
-
-    // get the car we want to modify and the current certOwner from it
-    const buffer = await ctx.stub.getState(carNumber); // get the car from chaincode state
-    const car = JSON.parse(buffer.toString()) as Car;
-    const carCertId = car.certOwner;
-
-    // get the client ID so we can make sure they are allowed to modify the car
-    const cid = new ClientIdentity(ctx.stub);
-    const clientCertId = cid.getID();
-
-    // the rule is to be able to modify a car you must be the current certOwner for it
-    // which usually means you are the creater of it or have had it transfered to your FabricUserID (CN)
-    // However, here we are bypassing this so we want to make sure that our clientID is NOT sure certOwner,
-    // but that our clientCN IS the external owner
-    if (carCertId === clientCertId) {
-      // no transfer takes place - we are already the owner
-      return false;
-    }
-
-    // we are not the certOwner for it (good), but make sure it has been transfered to us via a
-    // changeCarOwner() transaction - which means we check our CN against the current external owner
-    const clientCN = Utils.extractCN(clientCertId);
-    if (clientCN === car.owner) {
-      // make sure we do not already have too many cars - transferCheck
-      await Utils.checkForMaxCars(carNumber, clientCertId, cid, ctx, true); // this will throw if not ok
-
-      // as the car has been transfered to us, we need to take "full" ownership of it
-      // this prevents the previous owner deleting it for example.
-      car.certOwner = clientCertId;
-    } else {
-      // not transfered to us
-      const carCN = Utils.extractCN(carCertId);
-      throw new Error(`The ownership of car ${carNumber} cannot be changed. User ${carCN} has not authorised ${clientCN} to take ownership.`);
-    }
-
-    await ctx.stub.putState(carNumber, Buffer.from(JSON.stringify(car)));
-
-    console.info('============= END : confirmTransfer ===========');
-    return true;
-  }*/
 }

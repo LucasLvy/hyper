@@ -8,27 +8,27 @@ import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 export class PreviousOwnersResult {
 
   @Property()
-  public previousOwnerCount: number;
+  public previousProducerCount: number;
 
   // @Property()
-  public previousOwners?: string[];
+  public previousProducers?: string[];
 
   // Property()
-  public previousOwnershipChangeDates?: Date[];
+  public previousProducingChangeDates?: Date[];
 
   @Property()
   public currentOwner: string;
 
   // @Property()
-  public currentOwnershipChangeDate: Date;
+  public currentProducingChangeDate: Date;
 
-  public constructor(count: number, previousOwners: string[], previousOwnershipChangeDates: Date[], currentOwner: string, currentDate: Date) {
-    this.previousOwnerCount = count;
+  public constructor(count: number, previousProducers: string[], previousProducingChangeDates: Date[], currentOwner: string, currentDate: Date) {
+    this.previousProducerCount = count;
     if (count > 0) {
-      this.previousOwners = previousOwners;
-      this.previousOwnershipChangeDates = previousOwnershipChangeDates;
+      this.previousProducers = previousProducers;
+      this.previousProducingChangeDates = previousProducingChangeDates;
     }
     this.currentOwner = currentOwner;
-    this.currentOwnershipChangeDate = currentDate;
+    this.currentProducingChangeDate = currentDate;
   }
 }

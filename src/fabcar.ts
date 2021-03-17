@@ -507,47 +507,40 @@ public async resprayCar(ctx: Context, id: string, certification: string)
 
   console.info('============= END : resprayCar ===========');
 }
-/*
+
   @Transaction()
   @Returns('PreviousOwnersResult')
-  public async getPreviousOwners(ctx: Context, carNumber: string): Promise<PreviousOwnersResult>
+  public async getPreviousOwners(ctx: Context, id: string): Promise<PreviousOwnersResult>
   {
     console.info('============= START : getPreviousOwners ===========');
 
-    const exists = await this.carExists(ctx, carNumber);
-    if (!exists) {
-      throw new Error(`The car ${carNumber} does not exist.`);
-    }
 
     // Note: as of fabric 2.0 getHistoryForKey() is guaranteed to return data "newest to oldest" so most recent first
-    const historyIterator = await ctx.stub.getHistoryForKey(carNumber);
-    const previousOwners: string[] = [];
+    const historyIterator = await ctx.stub.getHistoryForKey(id);
+    const previousProducers: string[] = [];
     const previousOwnershipChangeDates: Date[] = [];
-    let previousOwnerCount = 0;
-    let previousOwner = '';
-    let previousCertOwner = '';
-    let currentOwner = '';
+    let previousProducerCount=0;
+    let currentProducer = '';
     let currentOwnershipChangeDate: Date = new Date();
     let first = true;
     while (true) {
       const res = await historyIterator.next();
       if (res.value) {
-        let currentCarOwner = '';
+        let currentBatchProducer = '';
         let currentCarCertOwner = '';
         const txnTs = res.value.getTimestamp();
         const txnDate = TimestampMapper.toDate(txnTs);
         if (res.value.is_delete) {
-          currentCarOwner = 'CAR KEY DELETED';
+          currentBatchProducer = 'CAR KEY DELETED';
         } else {
           // console.log(res.value.value.toString('utf8'));
           try {
             const car = JSON.parse(res.value.value.toString('utf8')) as Car;
-            currentCarOwner = car.owner;
-            currentCarCertOwner = car.certOwner ? car.certOwner : ''; // there will always be a certOwner
+            currentBatchProducer = car.producerId;
           } catch (err) {
             // result = 'Invalid JSON';
             console.log(err);
-            throw new Error(`The car ${carNumber} has an invalid JSON record ${res.value.value.toString('utf8')}.`);
+            throw new Error(`The car ${id} has an invalid JSON record ${res.value.value.toString('utf8')}.`);
           }
         }
 
@@ -555,34 +548,22 @@ public async resprayCar(ctx: Context, id: string, certification: string)
           // keep current owner out of previousOwner list and count.
           // this relies on the car existing (so not being a deleted car for current owner)
           // but as we always check that the carExists() first that should not be a problem
-          currentOwner = currentCarOwner;
+          currentProducer = currentBatchProducer;
           currentOwnershipChangeDate = txnDate;
           first = false;
         } else {
           let includeTxn = true;
           // bounce over deletes as we keep those in the list...
-          if (!res.value.is_delete) {
-            // we start checking on the second (and subsequent) time through so we aways have previous details
-            if ((previousCertOwner !== currentCarCertOwner && previousOwner === currentCarOwner) ||
-              (previousCertOwner === currentCarCertOwner && previousOwner === currentCarOwner)) {
-              // this indicates this txn was followed by a ConfirmTransfer txn or was a different type of
-              // none ownership transfering txn such as a resprayCar txn which means we keep this one
-              // out of the previous owners lists as otherwise it looks like a duplicate transfer happened.
-              includeTxn = false;
-              console.log('Skipping txn: ', previousOwnerCount, currentCarOwner, txnDate.toString());
-            }
-          }
+          
 
           if (includeTxn) {
-            ++previousOwnerCount;
-            previousOwners.push(currentCarOwner);
+            ++previousProducerCount;
+            previousProducers.push(currentBatchProducer);
             previousOwnershipChangeDates.push(txnDate);
           }
         }
 
         // store for next iteration
-        previousOwner = currentCarOwner;
-        previousCertOwner = currentCarCertOwner;
       }
       if (res.done) {
         // console.log('end of data');
@@ -593,19 +574,19 @@ public async resprayCar(ctx: Context, id: string, certification: string)
 
     // create the return data
     const allresults = new PreviousOwnersResult(
-      previousOwnerCount,
-      previousOwners,
+      previousProducerCount,
+      previousProducers,
       previousOwnershipChangeDates,
-      currentOwner,
+      currentProducer,
       currentOwnershipChangeDate,
     );
 
     console.info('============= END : getPreviousOwners ===========');
     return allresults;
   }
-
+/*
   @Transaction()
-  public async confirmTransfer(ctx: Context, carNumber: string): Promise<boolean>
+  public async confirmTransfer(ctx: Context, id: string): Promise<boolean>
   {
     console.info('============= START : confirmTransfer ===========');
 

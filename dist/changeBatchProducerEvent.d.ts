@@ -9,5 +9,5 @@ export declare class ChangeProducerEvent implements IChangeProducerEvent {
     id: string;
     newProducerId: string;
     transactionDate: Date;
-    constructor(id: string, newProducerId: string, txDate: Date, docType: string);
+    constructor(id: string, newProducerId: string, txDate: Date);
 }

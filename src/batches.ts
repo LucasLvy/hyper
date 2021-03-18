@@ -146,7 +146,7 @@ export class Batches extends Contract
 
     // emit an event to inform listeners that a car has had its owner changed
     const txDate = TimestampMapper.toDate(ctx.stub.getTxTimestamp());
-    const changeProducerEvent = new ChangeProducerEvent(id, newProducerId, txDate,docType);
+    const changeProducerEvent = new ChangeProducerEvent(id, newProducerId, txDate);
     ctx.stub.setEvent(changeProducerEvent.docType, Buffer.from(JSON.stringify(changeProducerEvent)));
 
     console.info('============= END : changeCarOwner ===========');

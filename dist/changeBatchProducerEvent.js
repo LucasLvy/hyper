@@ -15,7 +15,7 @@ exports.ChangeProducerEvent = void 0;
  */
 const fabric_contract_api_1 = require("fabric-contract-api");
 let ChangeProducerEvent = class ChangeProducerEvent {
-    constructor(id, newProducerId, txDate) {
+    constructor(id, newProducerId, txDate, docType) {
         this.docType = 'changeOwnerEvent';
         this.id = id;
         this.newProducerId = newProducerId;
@@ -36,7 +36,7 @@ __decorate([
 ], ChangeProducerEvent.prototype, "newProducerId", void 0);
 ChangeProducerEvent = __decorate([
     fabric_contract_api_1.Object(),
-    __metadata("design:paramtypes", [String, String, Date])
+    __metadata("design:paramtypes", [String, String, Date, String])
 ], ChangeProducerEvent);
 exports.ChangeProducerEvent = ChangeProducerEvent;
 //# sourceMappingURL=changeBatchProducerEvent.js.map

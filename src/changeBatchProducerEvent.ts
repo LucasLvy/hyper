@@ -26,8 +26,8 @@ export class ChangeProducerEvent implements IChangeProducerEvent {
   // @Property()
   public transactionDate: Date;
 
-  public constructor(id: string, newProducerId: string, txDate: Date) {
-    this.docType = 'changeOwnerEvent';
+  public constructor(id: string, newProducerId: string, txDate: Date,docType:string) {
+    this.docType = docType;
     this.id = id;
     this.newProducerId = newProducerId;
     this.transactionDate = txDate;

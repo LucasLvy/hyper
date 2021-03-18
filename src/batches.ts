@@ -39,7 +39,7 @@ export class Batches extends Contract
   }
   
   @Transaction()
-  public async createBatch(ctx: Context,weight: number, id:string, producerId:string)
+  public async createBatch(ctx: Context, id:string, producerId:string,weight: number)
   {
     console.info('============= START : Create Car ===========');
 
@@ -69,15 +69,15 @@ export class Batches extends Contract
       id,
       weight,
       producerId,
-      docType: 'coton',
+      docType: 'coton brut',
     };
 
     const buffer = Buffer.from(JSON.stringify(batch));
     await ctx.stub.putState(id, buffer);
 
     // emit an event to inform listeners that a car has been created
-    const createCarEvent = new CreateBatchEvent(id,weight,txDate, producerId);
-    ctx.stub.setEvent(createCarEvent.docType, Buffer.from(JSON.stringify(createCarEvent)));
+    const createBatchEvent = new CreateBatchEvent(id,weight,txDate, producerId);
+    ctx.stub.setEvent(createBatchEvent.docType, Buffer.from(JSON.stringify(createBatchEvent)));
 
     console.info('============= END : Create Car ===========');
   }
@@ -128,16 +128,26 @@ export class Batches extends Contract
     }*/
 
     // set the new owner into the car
-    
     batch.producerId = newProducerId;
-
+    if (batch.producerId.charAt(0)==='2'){
+      batch.docType= "coton égrené"
+    }
+    else if (batch.producerId.charAt(0)==='3'){
+      batch.docType= "coton filé"
+    }
+    else if (batch.producerId.charAt(0)==='4'){
+      batch.docType= "vêtement"
+    }
+    else if (batch.producerId.charAt(0)==='5'){
+      batch.docType= "vêtement stocké"
+    }
     // put the batch into the RWSET for adding to the ledger
     await ctx.stub.putState(id, Buffer.from(JSON.stringify(batch)));
 
     // emit an event to inform listeners that a car has had its owner changed
     const txDate = TimestampMapper.toDate(ctx.stub.getTxTimestamp());
-    const changeOwnerEvent = new ChangeProducerEvent(id, newProducerId, txDate);
-    ctx.stub.setEvent(changeOwnerEvent.docType, Buffer.from(JSON.stringify(changeOwnerEvent)));
+    const changeProducerEvent = new ChangeProducerEvent(id, newProducerId, txDate,docType);
+    ctx.stub.setEvent(changeProducerEvent.docType, Buffer.from(JSON.stringify(changeProducerEvent)));
 
     console.info('============= END : changeCarOwner ===========');
   }

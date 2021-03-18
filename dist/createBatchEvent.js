@@ -16,7 +16,7 @@ exports.CreateBatchEvent = void 0;
 const fabric_contract_api_1 = require("fabric-contract-api");
 let CreateBatchEvent = class CreateBatchEvent {
     constructor(id, weight, txDate, producerId) {
-        this.docType = 'createCarEvent';
+        this.docType = 'coton';
         this.weight = weight;
         this.id = id;
         this.transactionDate = txDate;

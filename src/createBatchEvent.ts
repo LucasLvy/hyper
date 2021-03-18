@@ -29,7 +29,7 @@ export class CreateBatchEvent implements ICreateBatchEvent {
   public transactionDate: Date;
 
   public constructor( id:string,weight: number,txDate: Date, producerId:string) {
-    this.docType = 'createCarEvent';
+    this.docType = 'coton';
     this.weight = weight;
     this.id = id;
     this.transactionDate = txDate;

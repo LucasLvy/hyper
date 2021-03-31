@@ -14,7 +14,7 @@ export class PreviousProducersResult {
   public previousProducers?: string[];
 
   // Property()
-  public previousProducingChangeDates?: Date[];
+  public previousProducingChangeDates?: string[];
 
   @Property()
   public currentOwner: string;
@@ -22,7 +22,7 @@ export class PreviousProducersResult {
   // @Property()
   public currentProducingChangeDate: Date;
 
-  public constructor(count: number, previousProducers: string[], previousProducingChangeDates: Date[], currentOwner: string, currentDate: Date) {
+  public constructor(count: number, previousProducers: string[], previousProducingChangeDates: string[], currentOwner: string, currentDate: Date) {
     this.previousProducerCount = count;
     if (count > 0) {
       this.previousProducers = previousProducers;

@@ -1,8 +1,8 @@
 export declare class PreviousProducersResult {
     previousProducerCount: number;
     previousProducers?: string[];
-    previousProducingChangeDates?: Date[];
+    previousProducingChangeDates?: string[];
     currentOwner: string;
     currentProducingChangeDate: Date;
-    constructor(count: number, previousProducers: string[], previousProducingChangeDates: Date[], currentOwner: string, currentDate: Date);
+    constructor(count: number, previousProducers: string[], previousProducingChangeDates: string[], currentOwner: string, currentDate: Date);
 }
